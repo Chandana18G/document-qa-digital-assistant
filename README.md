@@ -8,8 +8,6 @@ hallucination.
 
 Built with Python, Sentence-Transformers, FAISS, and Streamlit.
 
-![Architecture](architecture.svg)
-
 ---
 
 ## Why this project
