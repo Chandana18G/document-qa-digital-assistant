@@ -46,51 +46,6 @@ most companies use for internal Generative AI assistants.
 - **Answer model:** OpenAI `gpt-4o-mini` if you set an API key, otherwise a free
   local `flan-t5-base` model — so it runs with **zero cost** out of the box.
 
----
-
-## Setup
-
-```bash
-# 1. clone and enter the project
-git clone https://github.com/Chandana18G/rag-document-chatbot.git
-cd rag-document-chatbot
-
-# 2. (recommended) create a virtual environment
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS / Linux:
-source .venv/bin/activate
-
-# 3. install dependencies
-pip install -r requirements.txt
-```
-
-Optional — to use OpenAI for higher-quality answers:
-
-```bash
-cp .env.example .env      # then paste your key into .env
-```
-
----
-
-## Usage
-
-```bash
-# 1. add your files to the documents/ folder (a sample is included)
-
-# 2. build the search index (run again whenever documents change)
-python ingest.py
-
-# 3a. ask from the command line
-python ask.py "What is retrieval-augmented generation?"
-
-# 3b. or launch the web chat UI
-streamlit run app.py
-```
-
----
-
 ## Project structure
 
 | File | What it does |
