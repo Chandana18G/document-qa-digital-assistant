@@ -1,0 +1,10 @@
+# Core RAG stack — all free / open source
+sentence-transformers>=2.6.0   # turns text into embeddings (vectors)
+faiss-cpu>=1.7.4               # fast vector similarity search
+pypdf>=4.0.0                  # read text out of PDF files
+streamlit>=1.32.0            # simple web chat UI
+numpy>=1.24.0
+
+# Optional: use OpenAI for the answer generation step.
+# If you don't set an OPENAI_API_KEY the app falls back to a free local model.
+openai>=1.0.0
