@@ -17,17 +17,17 @@ OpenAI `gpt-4o-mini` (if `OPENAI_API_KEY` is set) or local `google/flan-t5-base`
 | `ingest.py` | Thin entry point: calls `rag.build_index()`. |
 | `ask.py` | CLI: one-shot (`python ask.py "question"`) or interactive loop. |
 | `app.py` | Streamlit chat UI; calls `rag.answer_question()` per message. |
-| `architecture.svg` | Diagram of the pipeline (not currently linked from the README). |
+| `architecture.svg` | Diagram of the pipeline, embedded in the README. |
 
-Data directories (not in git, created at runtime):
-- `documents/` — source files the user drops in. Read recursively.
+Data directories (resolved relative to `rag.py`; override with `RAG_DOCS_DIR` / `RAG_INDEX_DIR`):
+- `documents/` — source files the user drops in. Read recursively. Only `sample.md` is tracked.
 - `index/` — `faiss.index` + `chunks.pkl` (chunk texts and source filenames, index-aligned).
 
 ## Commands
 
 ```bash
 pip install -r requirements.txt
-mkdir -p documents          # add .pdf/.md/.txt files here
+# add .pdf/.md/.txt files to documents/ (sample.md included)
 python ingest.py            # (re)build index/ — required after any document change
 python ask.py "question"    # CLI
 streamlit run app.py        # web UI at http://localhost:8501
@@ -43,18 +43,19 @@ There are no tests, linters, or CI configured yet.
   similarity. Query embeddings must also use `normalize_embeddings=True`.
 - The embedding model used at query time must match the one used at ingest time;
   changing `EMBED_MODEL_NAME` requires re-running `ingest.py`.
-- `DOCS_DIR` / `INDEX_DIR` are relative paths — scripts must be run from the repo root.
+- `load_index()` caches the index in memory, keyed on the files' mtimes, so re-ingesting
+  is picked up without a restart. Streamlit reuses imported modules across reruns, so this
+  cache (and the model singletons) persist in the web app too.
+- The local flan-t5 prompt is fitted to `LOCAL_MAX_INPUT_TOKENS` by dropping the
+  lowest-ranked contexts (`fit_prompt`) — never truncate the prompt itself, the question
+  is at the end.
+- `read_documents()` skips unreadable/empty files with a warning on stderr; `build_index()`
+  exits with a clear message if nothing usable remains.
 - Heavy imports (`pypdf`, `openai`, `transformers`) are deferred inside functions on
   purpose so importing `rag` stays fast. Keep it that way.
 
 ## Known issues / gotchas
 
-- `answer_question()` reloads the FAISS index and pickle from disk on every call
-  (including every Streamlit message). Not cached.
-- An index built from documents that yield zero text (e.g. scanned PDFs) will crash in
-  `build_index` (`embeddings.shape[1]` on an empty array).
-- The local flan-t5 path truncates the prompt at 1024 tokens from the right, which would
-  drop the question itself if the context is long.
 - No similarity threshold: the top-k chunks are always sent to the LLM even when
   irrelevant.
 - Sources are keyed by `path.name`, so same-named files in different subfolders collide;

@@ -10,22 +10,29 @@ The whole RAG idea in four steps:
 
 import os
 import pickle
+import sys
 from pathlib import Path
 
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
-DOCS_DIR = Path("documents")
-INDEX_DIR = Path("index")
+# Paths default to folders next to this file, so the scripts work from any
+# working directory. Override with RAG_DOCS_DIR / RAG_INDEX_DIR.
+BASE_DIR = Path(__file__).resolve().parent
+DOCS_DIR = Path(os.getenv("RAG_DOCS_DIR", BASE_DIR / "documents"))
+INDEX_DIR = Path(os.getenv("RAG_INDEX_DIR", BASE_DIR / "index"))
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
 TOP_K = 4
+# flan-t5 was trained on 512-token inputs; longer prompts get truncated.
+LOCAL_MAX_INPUT_TOKENS = 512
 
 _embedder = None
 _local_tok = None
 _local_model = None
+_index_cache = {"key": None, "value": None}
 
 
 def get_embedder():
@@ -38,16 +45,30 @@ def get_embedder():
 
 # STEP 1 - read and chunk documents
 def read_documents(docs_dir: Path = DOCS_DIR):
-    """Read every .txt, .md and .pdf file in docs_dir into raw text."""
+    """Read every .txt, .md and .pdf file in docs_dir into raw text.
+
+    Files that can't be read (corrupt or encrypted PDFs, etc.) are skipped
+    with a warning instead of aborting the whole ingest.
+    """
     texts = []
     for path in sorted(docs_dir.glob("**/*")):
-        if path.suffix.lower() in {".txt", ".md"}:
-            texts.append((path.name, path.read_text(encoding="utf-8", errors="ignore")))
-        elif path.suffix.lower() == ".pdf":
-            from pypdf import PdfReader
-            reader = PdfReader(str(path))
-            content = "\n".join((page.extract_text() or "") for page in reader.pages)
-            texts.append((path.name, content))
+        suffix = path.suffix.lower()
+        if suffix not in {".txt", ".md", ".pdf"} or not path.is_file():
+            continue
+        try:
+            if suffix == ".pdf":
+                from pypdf import PdfReader
+                reader = PdfReader(str(path))
+                content = "\n".join((page.extract_text() or "") for page in reader.pages)
+            else:
+                content = path.read_text(encoding="utf-8", errors="ignore")
+        except Exception as e:
+            print(f"WARNING: skipping '{path}': {e}", file=sys.stderr)
+            continue
+        if not content.strip():
+            print(f"WARNING: no text extracted from '{path}' (scanned PDF?)", file=sys.stderr)
+            continue
+        texts.append((path.name, content))
     return texts
 
 
@@ -69,13 +90,15 @@ def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR):
     """Read docs -> chunk -> embed -> save a searchable FAISS index to disk."""
     docs = read_documents(docs_dir)
     if not docs:
-        raise SystemExit(f"No documents found in '{docs_dir}'. Add files first.")
+        raise SystemExit(f"No readable documents found in '{docs_dir}'. Add files first.")
 
     chunks, sources = [], []
     for name, text in docs:
         for c in chunk_text(text):
             chunks.append(c)
             sources.append(name)
+    if not chunks:
+        raise SystemExit("Documents were read but produced no text chunks.")
 
     print(f"Read {len(docs)} document(s) -> {len(chunks)} chunk(s). Embedding...")
     embeddings = get_embedder().encode(chunks, show_progress_bar=True, normalize_embeddings=True)
@@ -84,7 +107,7 @@ def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR):
     index = faiss.IndexFlatIP(embeddings.shape[1])
     index.add(embeddings)
 
-    index_dir.mkdir(exist_ok=True)
+    index_dir.mkdir(parents=True, exist_ok=True)
     faiss.write_index(index, str(index_dir / "faiss.index"))
     with open(index_dir / "chunks.pkl", "wb") as f:
         pickle.dump({"chunks": chunks, "sources": sources}, f)
@@ -93,10 +116,16 @@ def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR):
 
 # STEP 3 - retrieve the most relevant chunks for a question
 def load_index(index_dir: Path = INDEX_DIR):
-    index = faiss.read_index(str(index_dir / "faiss.index"))
-    with open(index_dir / "chunks.pkl", "rb") as f:
-        store = pickle.load(f)
-    return index, store["chunks"], store["sources"]
+    """Load the index, reusing the in-memory copy until the files on disk change."""
+    index_path, store_path = index_dir / "faiss.index", index_dir / "chunks.pkl"
+    key = (str(index_path.resolve()), index_path.stat().st_mtime_ns, store_path.stat().st_mtime_ns)
+    if _index_cache["key"] != key:
+        index = faiss.read_index(str(index_path))
+        with open(store_path, "rb") as f:
+            store = pickle.load(f)
+        _index_cache["value"] = (index, store["chunks"], store["sources"])
+        _index_cache["key"] = key
+    return _index_cache["value"]
 
 
 def retrieve(question: str, index, chunks, sources, top_k: int = TOP_K):
@@ -125,16 +154,29 @@ def build_prompt(question: str, contexts: list) -> str:
     )
 
 
+def fit_prompt(question: str, contexts: list, count_tokens, max_tokens: int) -> str:
+    """Build a prompt within max_tokens by dropping the lowest-ranked contexts.
+
+    Truncating the finished prompt would cut off its end - the question itself -
+    so trim the context instead.
+    """
+    contexts = list(contexts)
+    while contexts:
+        prompt = build_prompt(question, contexts)
+        if count_tokens(prompt) <= max_tokens:
+            return prompt
+        contexts.pop()
+    return build_prompt(question, [])
+
+
 def generate_answer(question: str, contexts: list) -> str:
     """Use OpenAI if an API key is set, otherwise a free local model."""
-    prompt = build_prompt(question, contexts)
-
     if os.getenv("OPENAI_API_KEY"):
         from openai import OpenAI
         client = OpenAI()
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": build_prompt(question, contexts)}],
             temperature=0.1,
         )
         return resp.choices[0].message.content.strip()
@@ -146,7 +188,12 @@ def generate_answer(question: str, contexts: list) -> str:
     if _local_model is None:
         _local_tok = AutoTokenizer.from_pretrained("google/flan-t5-base")
         _local_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
-    inputs = _local_tok(prompt, return_tensors="pt", truncation=True, max_length=1024)
+    prompt = fit_prompt(
+        question, contexts,
+        count_tokens=lambda p: len(_local_tok(p).input_ids),
+        max_tokens=LOCAL_MAX_INPUT_TOKENS,
+    )
+    inputs = _local_tok(prompt, return_tensors="pt", truncation=True, max_length=LOCAL_MAX_INPUT_TOKENS)
     output_ids = _local_model.generate(**inputs, max_new_tokens=256)
     return _local_tok.decode(output_ids[0], skip_special_tokens=True).strip()
 
