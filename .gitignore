@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Generated vector index (rebuild with `python ingest.py`)
+index/
+
+# User documents - only the sample is tracked
+documents/*
+!documents/sample.md
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
