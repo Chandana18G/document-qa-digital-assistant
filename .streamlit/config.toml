@@ -1,0 +1,6 @@
+[server]
+# Streamlit's file watcher inspects every imported module on each rerun. Inspecting
+# transformers' lazy modules imports thousands of submodules, which floods the log with
+# torchvision errors and can stall the server mid-answer until the browser reconnects
+# (losing the chat). Restart the server to pick up edits to app.py instead.
+fileWatcherType = "none"
