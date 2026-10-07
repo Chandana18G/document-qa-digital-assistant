@@ -1,0 +1,524 @@
+{
+  "dataset": "SQuAD 2.0 dev (Rajpurkar et al., 2018), CC BY-SA 4.0",
+  "corpus": {
+    "indexed_articles": [
+      "European Union law",
+      "Fresno, California",
+      "Huguenot",
+      "Harvard University",
+      "Imperialism",
+      "Economic inequality",
+      "Scottish Parliament",
+      "Pharmacy",
+      "Intergovernmental Panel on Climate Change",
+      "Yuan dynasty",
+      "Black Death",
+      "Amazon rainforest",
+      "Ctenophora",
+      "Prime number",
+      "1973 oil crisis",
+      "Private school",
+      "Islamism",
+      "Steam engine",
+      "Immune system",
+      "Normans",
+      "French and Indian War",
+      "Packet switching",
+      "Construction",
+      "Southern California",
+      "Warsaw"
+    ],
+    "held_out_articles": [
+      "Rhine",
+      "Jacksonville, Florida",
+      "Sky (United Kingdom)",
+      "University of Chicago",
+      "Victoria (Australia)",
+      "Force",
+      "Geology",
+      "Civil disobedience",
+      "Computational complexity theory",
+      "Oxygen"
+    ]
+  },
+  "settings": {
+    "embed_model": "all-MiniLM-L6-v2",
+    "rerank_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "top_k": 4,
+    "candidates": 20,
+    "chunk_size": 800
+  },
+  "retrieval": {
+    "hybrid_before_fix": {
+      "hit@1": 0.627,
+      "hit@4": 0.847,
+      "mrr": 0.7334,
+      "n": 1000
+    },
+    "hybrid": {
+      "hit@1": 0.722,
+      "hit@4": 0.918,
+      "mrr": 0.8136,
+      "n": 1000
+    },
+    "hybrid_rerank": {
+      "hit@1": 0.881,
+      "hit@4": 0.965,
+      "mrr": 0.9219,
+      "n": 1000
+    },
+    "dropped_no_gold_chunk": 0,
+    "seconds_per_query": 1.872,
+    "batched_matches_retrieve": "10/10",
+    "vector": {
+      "hit@1": 0.627,
+      "hit@4": 0.847,
+      "mrr": 0.7321,
+      "n": 1000
+    },
+    "bm25": {
+      "hit@1": 0.767,
+      "hit@4": 0.894,
+      "mrr": 0.8301,
+      "n": 1000
+    }
+  },
+  "refusals": {
+    "n_in_corpus": 1000,
+    "n_out_of_corpus": 500,
+    "rerank_curve": [
+      {
+        "threshold": -12.0,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": -11.5,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": -11.0,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.966
+      },
+      {
+        "threshold": -10.5,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.85
+      },
+      {
+        "threshold": -10.0,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.718
+      },
+      {
+        "threshold": -9.5,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.64
+      },
+      {
+        "threshold": -9.0,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.554
+      },
+      {
+        "threshold": -8.5,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.472
+      },
+      {
+        "threshold": -8.0,
+        "in_corpus_answered": 0.999,
+        "in_corpus_answered_with_gold": 0.964,
+        "out_of_corpus_answered": 0.4
+      },
+      {
+        "threshold": -7.5,
+        "in_corpus_answered": 0.998,
+        "in_corpus_answered_with_gold": 0.964,
+        "out_of_corpus_answered": 0.32
+      },
+      {
+        "threshold": -7.0,
+        "in_corpus_answered": 0.997,
+        "in_corpus_answered_with_gold": 0.963,
+        "out_of_corpus_answered": 0.278
+      },
+      {
+        "threshold": -6.5,
+        "in_corpus_answered": 0.995,
+        "in_corpus_answered_with_gold": 0.962,
+        "out_of_corpus_answered": 0.216
+      },
+      {
+        "threshold": -6.0,
+        "in_corpus_answered": 0.993,
+        "in_corpus_answered_with_gold": 0.96,
+        "out_of_corpus_answered": 0.168
+      },
+      {
+        "threshold": -5.5,
+        "in_corpus_answered": 0.99,
+        "in_corpus_answered_with_gold": 0.958,
+        "out_of_corpus_answered": 0.146
+      },
+      {
+        "threshold": -5.0,
+        "in_corpus_answered": 0.99,
+        "in_corpus_answered_with_gold": 0.958,
+        "out_of_corpus_answered": 0.122
+      },
+      {
+        "threshold": -4.5,
+        "in_corpus_answered": 0.986,
+        "in_corpus_answered_with_gold": 0.955,
+        "out_of_corpus_answered": 0.086
+      },
+      {
+        "threshold": -4.0,
+        "in_corpus_answered": 0.984,
+        "in_corpus_answered_with_gold": 0.954,
+        "out_of_corpus_answered": 0.074
+      },
+      {
+        "threshold": -3.5,
+        "in_corpus_answered": 0.981,
+        "in_corpus_answered_with_gold": 0.951,
+        "out_of_corpus_answered": 0.054
+      },
+      {
+        "threshold": -3.0,
+        "in_corpus_answered": 0.974,
+        "in_corpus_answered_with_gold": 0.944,
+        "out_of_corpus_answered": 0.044
+      },
+      {
+        "threshold": -2.5,
+        "in_corpus_answered": 0.964,
+        "in_corpus_answered_with_gold": 0.935,
+        "out_of_corpus_answered": 0.032
+      },
+      {
+        "threshold": -2.0,
+        "in_corpus_answered": 0.955,
+        "in_corpus_answered_with_gold": 0.928,
+        "out_of_corpus_answered": 0.018
+      },
+      {
+        "threshold": -1.5,
+        "in_corpus_answered": 0.946,
+        "in_corpus_answered_with_gold": 0.92,
+        "out_of_corpus_answered": 0.014
+      },
+      {
+        "threshold": -1.0,
+        "in_corpus_answered": 0.937,
+        "in_corpus_answered_with_gold": 0.913,
+        "out_of_corpus_answered": 0.008
+      },
+      {
+        "threshold": -0.5,
+        "in_corpus_answered": 0.926,
+        "in_corpus_answered_with_gold": 0.902,
+        "out_of_corpus_answered": 0.008
+      },
+      {
+        "threshold": 0.0,
+        "in_corpus_answered": 0.909,
+        "in_corpus_answered_with_gold": 0.888,
+        "out_of_corpus_answered": 0.008
+      },
+      {
+        "threshold": 0.5,
+        "in_corpus_answered": 0.889,
+        "in_corpus_answered_with_gold": 0.869,
+        "out_of_corpus_answered": 0.004
+      },
+      {
+        "threshold": 1.0,
+        "in_corpus_answered": 0.87,
+        "in_corpus_answered_with_gold": 0.851,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 1.5,
+        "in_corpus_answered": 0.854,
+        "in_corpus_answered_with_gold": 0.839,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 2.0,
+        "in_corpus_answered": 0.834,
+        "in_corpus_answered_with_gold": 0.819,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 2.5,
+        "in_corpus_answered": 0.807,
+        "in_corpus_answered_with_gold": 0.794,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 3.0,
+        "in_corpus_answered": 0.78,
+        "in_corpus_answered_with_gold": 0.768,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 3.5,
+        "in_corpus_answered": 0.749,
+        "in_corpus_answered_with_gold": 0.738,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 4.0,
+        "in_corpus_answered": 0.701,
+        "in_corpus_answered_with_gold": 0.694,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 4.5,
+        "in_corpus_answered": 0.657,
+        "in_corpus_answered_with_gold": 0.651,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 5.0,
+        "in_corpus_answered": 0.588,
+        "in_corpus_answered_with_gold": 0.582,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 5.5,
+        "in_corpus_answered": 0.524,
+        "in_corpus_answered_with_gold": 0.518,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 6.0,
+        "in_corpus_answered": 0.449,
+        "in_corpus_answered_with_gold": 0.445,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 6.5,
+        "in_corpus_answered": 0.375,
+        "in_corpus_answered_with_gold": 0.373,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 7.0,
+        "in_corpus_answered": 0.293,
+        "in_corpus_answered_with_gold": 0.291,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 7.5,
+        "in_corpus_answered": 0.212,
+        "in_corpus_answered_with_gold": 0.21,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 8.0,
+        "in_corpus_answered": 0.148,
+        "in_corpus_answered_with_gold": 0.148,
+        "out_of_corpus_answered": 0.0
+      }
+    ],
+    "cosine_curve": [
+      {
+        "threshold": 0.0,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": 0.05,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": 0.1,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": 0.15,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 1.0
+      },
+      {
+        "threshold": 0.2,
+        "in_corpus_answered": 1.0,
+        "in_corpus_answered_with_gold": 0.965,
+        "out_of_corpus_answered": 0.984
+      },
+      {
+        "threshold": 0.25,
+        "in_corpus_answered": 0.996,
+        "in_corpus_answered_with_gold": 0.962,
+        "out_of_corpus_answered": 0.894
+      },
+      {
+        "threshold": 0.3,
+        "in_corpus_answered": 0.983,
+        "in_corpus_answered_with_gold": 0.949,
+        "out_of_corpus_answered": 0.694
+      },
+      {
+        "threshold": 0.35,
+        "in_corpus_answered": 0.953,
+        "in_corpus_answered_with_gold": 0.921,
+        "out_of_corpus_answered": 0.384
+      },
+      {
+        "threshold": 0.4,
+        "in_corpus_answered": 0.901,
+        "in_corpus_answered_with_gold": 0.87,
+        "out_of_corpus_answered": 0.196
+      },
+      {
+        "threshold": 0.45,
+        "in_corpus_answered": 0.842,
+        "in_corpus_answered_with_gold": 0.817,
+        "out_of_corpus_answered": 0.074
+      },
+      {
+        "threshold": 0.5,
+        "in_corpus_answered": 0.734,
+        "in_corpus_answered_with_gold": 0.715,
+        "out_of_corpus_answered": 0.026
+      },
+      {
+        "threshold": 0.55,
+        "in_corpus_answered": 0.625,
+        "in_corpus_answered_with_gold": 0.609,
+        "out_of_corpus_answered": 0.008
+      },
+      {
+        "threshold": 0.6,
+        "in_corpus_answered": 0.496,
+        "in_corpus_answered_with_gold": 0.481,
+        "out_of_corpus_answered": 0.002
+      },
+      {
+        "threshold": 0.65,
+        "in_corpus_answered": 0.346,
+        "in_corpus_answered_with_gold": 0.336,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.7,
+        "in_corpus_answered": 0.195,
+        "in_corpus_answered_with_gold": 0.193,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.75,
+        "in_corpus_answered": 0.063,
+        "in_corpus_answered_with_gold": 0.062,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.8,
+        "in_corpus_answered": 0.011,
+        "in_corpus_answered_with_gold": 0.011,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.85,
+        "in_corpus_answered": 0.0,
+        "in_corpus_answered_with_gold": 0.0,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.9,
+        "in_corpus_answered": 0.0,
+        "in_corpus_answered_with_gold": 0.0,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 0.95,
+        "in_corpus_answered": 0.0,
+        "in_corpus_answered_with_gold": 0.0,
+        "out_of_corpus_answered": 0.0
+      },
+      {
+        "threshold": 1.0,
+        "in_corpus_answered": 0.0,
+        "in_corpus_answered_with_gold": 0.0,
+        "out_of_corpus_answered": 0.0
+      }
+    ],
+    "default_rerank": {
+      "threshold": -4.0,
+      "in_corpus_answered": 0.984,
+      "in_corpus_answered_with_gold": 0.954,
+      "out_of_corpus_answered": 0.074
+    },
+    "default_cosine": {
+      "threshold": 0.35,
+      "in_corpus_answered": 0.953,
+      "in_corpus_answered_with_gold": 0.921,
+      "out_of_corpus_answered": 0.384
+    }
+  },
+  "chunk_sizes": {
+    "400": {
+      "documents": 25,
+      "chunks": 2336,
+      "mean_chunk_chars": 328.4,
+      "hit@1": 0.8878,
+      "hit@4": 0.9558,
+      "mrr": 0.9219,
+      "n": 294,
+      "contexts_fitting_flan_t5": 3.97
+    },
+    "800": {
+      "documents": 25,
+      "chunks": 1149,
+      "mean_chunk_chars": 669.8,
+      "hit@1": 0.8933,
+      "hit@4": 0.9567,
+      "mrr": 0.9271,
+      "n": 300,
+      "contexts_fitting_flan_t5": 2.25
+    },
+    "1200": {
+      "documents": 25,
+      "chunks": 832,
+      "mean_chunk_chars": 905.2,
+      "hit@1": 0.9033,
+      "hit@4": 0.9733,
+      "mrr": 0.9343,
+      "n": 300,
+      "contexts_fitting_flan_t5": 1.6
+    }
+  },
+  "answers": {
+    "model": "google/flan-t5-large",
+    "answerable": {
+      "n": 100,
+      "exact_match": 0.84,
+      "f1": 0.9061,
+      "refused": 0.03
+    },
+    "unanswerable": {
+      "n": 50,
+      "refused": 0.24
+    },
+    "seconds_per_answer": 6.03
+  }
+}
