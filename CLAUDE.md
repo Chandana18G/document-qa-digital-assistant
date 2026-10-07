@@ -22,6 +22,9 @@ local `google/flan-t5-large`. `LLM_PROVIDER` forces one.
 | `app.py` | Streamlit chat UI. Sidebar: upload files + rebuild index, per-session settings (provider, model, temperature, top-k, re-rank, threshold), clear/export chat. Streams answers; each has a "Show passages" expander numbered like the citations. |
 | `.streamlit/config.toml` | Disables Streamlit's file watcher (see Known issues). |
 | `architecture.svg` | Diagram of the pipeline, embedded in the README. |
+| `tests/` | Unit tests (pytest). |
+| `evaluation/` | SQuAD 2.0 evaluation: `squad.py` (corpus + questions), `run_eval.py`, `figures.py`. |
+| `results/metrics.json`, `figures/` | Output of the last evaluation run, plus the app screenshot `figures/app.png`. |
 
 Data directories (resolved relative to `rag.py`; override with `RAG_DOCS_DIR` / `RAG_INDEX_DIR`):
 - `documents/` — source files the user drops in. Read recursively. Only `sample.md` is tracked.
@@ -40,9 +43,18 @@ pip install -r requirements.txt
 python ingest.py            # (re)build index/ — required after any document change
 python ask.py "question"    # CLI
 streamlit run app.py        # web UI at http://localhost:8501
+python -m pytest            # unit tests (~1 min, no model downloads)
+python -m evaluation.run_eval [--quick]   # SQuAD 2.0 evaluation -> results/, figures/
+python -m evaluation.figures              # redraw the charts from results/metrics.json
 ```
 
-There are no tests, linters, or CI configured yet.
+- `tests/test_rag.py` replaces the embedder with a bag-of-words stand-in (`FakeEmbedder`),
+  so tests exercise the real indexing and search code without downloading models. No
+  linters or CI yet.
+- `evaluation/` downloads SQuAD 2.0 dev into `evaluation/data/` and builds indexes in
+  `evaluation/work/` (both gitignored). It calls `rag.retrieve()` / `rag.answer_question()`
+  directly, so it measures the real pipeline. Re-run it after changing retrieval, models
+  or thresholds, and update the README's results section from `results/metrics.json`.
 
 ## Key invariants
 
@@ -57,6 +69,13 @@ There are no tests, linters, or CI configured yet.
   cache (and the model singletons) persist in the web app too.
 - Chunks start with their Markdown section path (`Title > Section`) and never cross a
   section boundary; that prefix is part of the embedded and BM25-indexed text.
+- `_stream_local()` runs `generate()` on one reused worker thread (`_local_worker`), never a
+  new thread per answer — that leaked ~80 MB of PyTorch per-thread memory each time. Its
+  `run()` always calls `streamer.end()` and the caller calls `job.result()`, so a failing
+  `generate()` raises instead of hanging (regression-tested).
+- `retrieve()` sorts by cross-encoder score only when re-ranking. Without re-ranking it
+  keeps the fused (RRF) order — re-sorting by cosine would drop the BM25 half of the hybrid
+  search (regression-tested in `test_hybrid_order_is_kept_without_reranking`).
 - Relevance thresholds are calibrated per scoring mode: `MIN_RERANK_SCORE` applies to
   cross-encoder logits (relevant ≳ -2, off-topic ≈ -10 on `sample.md`), `MIN_SIMILARITY`
   to cosine similarity when `RAG_RERANK=0`. If nothing passes, `answer_question` returns

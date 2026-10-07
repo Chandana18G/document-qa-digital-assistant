@@ -9,3 +9,7 @@ numpy>=1.24.0
 # Without an API key the app uses Ollama if it is running, else a free local model.
 anthropic>=1.9.0
 openai>=1.0.0
+
+# Development: tests and the evaluation (python -m pytest, python -m evaluation.run_eval)
+pytest>=8.0
+matplotlib>=3.8
