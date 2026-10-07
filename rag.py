@@ -196,7 +196,8 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP):
 
 
 # STEP 2 - embed chunks and build the FAISS index
-def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR):
+def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR,
+                chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP):
     """Read docs -> chunk -> embed -> save a searchable FAISS index to disk.
 
     Returns (number of documents, number of chunks).
@@ -208,7 +209,7 @@ def build_index(docs_dir: Path = DOCS_DIR, index_dir: Path = INDEX_DIR):
     # chunks[i], sources[i] and pages[i] describe FAISS row i - keep them aligned.
     chunks, sources, pages = [], [], []
     for source, page, text in docs:
-        for c in chunk_text(text):
+        for c in chunk_text(text, chunk_size, overlap):
             chunks.append(c)
             sources.append(source)
             pages.append(page)
@@ -324,9 +325,11 @@ def retrieve(question: str, store, top_k: int = TOP_K, rerank: bool = RERANK, mi
         scores = get_reranker().predict([(question, r["text"]) for r in results])
         for r, s in zip(results, scores):
             r["rerank_score"] = float(s)
+        results.sort(key=_relevance, reverse=True)
+    # Without re-ranking, keep the fused order: sorting by cosine similarity here would
+    # throw away the BM25 half of the hybrid ranking.
     if min_score is None:
         min_score = MIN_RERANK_SCORE if rerank else MIN_SIMILARITY
-    results.sort(key=_relevance, reverse=True)
     return [r for r in results if _relevance(r) >= min_score][:top_k]
 
 
@@ -465,18 +468,31 @@ def _load_local(name: str = LOCAL_MODEL_NAME):
     return _local_models[name]
 
 
+_local_worker = None   # one long-lived thread runs every local generate() call
+
+
 def _stream_local(prompt: str, model: str, temperature: float):
     # Greedy decoding - temperature is not used by the local model.
-    from threading import Thread
+    # generate() runs on one reused worker thread: starting a new thread for every
+    # answer leaked ~80 MB of PyTorch per-thread memory each time.
+    global _local_worker
+    from concurrent.futures import ThreadPoolExecutor
     from transformers import TextIteratorStreamer
+    if _local_worker is None:
+        _local_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="local-llm")
     tok, lm = _load_local(model)
     inputs = tok(prompt, return_tensors="pt", truncation=True, max_length=LOCAL_MAX_INPUT_TOKENS)
     streamer = TextIteratorStreamer(tok, skip_special_tokens=True)
-    worker = Thread(target=lm.generate, kwargs=dict(**inputs, max_new_tokens=256, streamer=streamer),
-                    daemon=True)
-    worker.start()
+
+    def run():
+        try:
+            lm.generate(**inputs, max_new_tokens=256, streamer=streamer)
+        finally:
+            streamer.end()   # never leave the reader waiting, even if generate() fails
+
+    job = _local_worker.submit(run)
     yield from streamer
-    worker.join()   # don't let the generator finish while torch is still running
+    job.result()   # wait for torch to finish, and re-raise any error from generate()
 
 
 _STREAMERS = {
