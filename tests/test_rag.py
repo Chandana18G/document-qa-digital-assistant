@@ -278,5 +278,33 @@ def test_local_model_errors_are_raised_not_hung(monkeypatch):
     assert "not enough memory" in str(outcome.get("error"))
 
 
+def test_local_model_answers_reuse_one_worker_thread(monkeypatch):
+    """Regression test: generate() runs on one long-lived worker thread. A new thread
+    per answer leaked ~80 MB of PyTorch per-thread memory each time."""
+    import threading
+
+    threads = []   # the Thread object each generate() call ran on
+
+    class Tok:
+        def __call__(self, prompt, **_):
+            return {"input_ids": [[1, 2, 3]]}
+
+        def decode(self, ids, **_):
+            return ""
+
+    class LM:
+        def generate(self, **_):
+            threads.append(threading.current_thread())
+
+    monkeypatch.setattr(rag, "_load_local", lambda name=None: (Tok(), LM()))
+    for _ in range(3):
+        "".join(rag._stream_local("prompt", "fake-model", 0.0))
+
+    assert len(threads) == 3
+    assert len(set(threads)) == 1, "each answer ran on a new thread"
+    assert threads[0] is not threading.current_thread(), "generate() must not block the caller"
+    assert threads[0].is_alive(), "the worker thread should outlive the answer"
+
+
 def test_condense_question_without_history_returns_it_unchanged():
     assert rag.condense_question("And equipment?", []) == "And equipment?"
