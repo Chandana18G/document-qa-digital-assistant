@@ -18,3 +18,8 @@ documents/*
 .vscode/
 .idea/
 .DS_Store
+
+# Evaluation: downloaded dataset and generated indexes
+evaluation/data/
+evaluation/work/
+.pytest_cache/
