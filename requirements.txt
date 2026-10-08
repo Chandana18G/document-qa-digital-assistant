@@ -5,6 +5,11 @@ pypdf>=4.0.0                  # read text out of PDF files
 streamlit>=1.32.0            # simple web chat UI
 numpy>=1.24.0
 
-# Optional: use OpenAI for the answer generation step.
-# If you don't set an OPENAI_API_KEY the app falls back to a free local model.
+# Optional: hosted models for the answer generation step (Claude or OpenAI).
+# Without an API key the app uses Ollama if it is running, else a free local model.
+anthropic>=1.9.0
 openai>=1.0.0
+
+# Development: tests and the evaluation (python -m pytest, python -m evaluation.run_eval)
+pytest>=8.0
+matplotlib>=3.8
